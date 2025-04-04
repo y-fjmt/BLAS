@@ -1,7 +1,11 @@
 CXX := g++
-CXXFLAGS := -g -O2 -mavx512f
-LDFLAGS := -L/home/fujimoto/opt/OpenBLAS/lib -fopenmp -lopenblas -lpthread -lgfortran
-INCLUDES := -I/home/fujimoto/opt/OpenBLAS/include/
+CXXFLAGS := -g -Wall -O2 -mavx512f -march=native
+LDFLAGS := -fopenmp -lopenblas -lpthread -lgfortran \
+		   -LOpenBLAS/build/lib \
+		   -Lgoogletest/build/lib
+INCLUDES := -IOpenBLAS/build/include \
+			-Igoogletest/googlemock/include \
+			-Igoogletest/googletest/include
 
 SRC_DIR := src
 BUILD_DIR := build
@@ -12,15 +16,12 @@ TARGET := main.out
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# compile
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LDFLAGS) -c $< -o $@
 
-# link
 $(TARGET): $(OBJ_FILES)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS) 
 
-# clean up
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET)
 
