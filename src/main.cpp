@@ -4,12 +4,12 @@
 #include <fstream>
 #include <vector>
 #include <cblas.h>
+#include <gtest/gtest.h>
 
 using namespace std;
 
 int main(int argc, char const *argv[]) {
 
-    double flops;
     chrono::high_resolution_clock::time_point start, end;
     vector<int> x, y1, y2;
 
@@ -18,7 +18,10 @@ int main(int argc, char const *argv[]) {
         int n = (1 << i);
         x.push_back(n);
 
-        float *A, *B, *C1, *C2;
+        float *A = (float*)aligned_alloc(64, n*n*sizeof(float));
+        float *B = (float*)aligned_alloc(64, n*n*sizeof(float));
+        float *C1 = (float*)aligned_alloc(64, n*n*sizeof(float));
+        float *C2 = (float*)aligned_alloc(64, n*n*sizeof(float));
         init_matrix(&A, &B, &C1, &C2, n);
 
         start = chrono::system_clock::now();
