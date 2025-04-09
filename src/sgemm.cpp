@@ -3,27 +3,46 @@
 
 #define B_L1 64
 #define B_L2 256
-#define B_L3 1024
+#define B_L3 512
 
 
 void _my_sgemm_comp(float* A, float* B, float* C, int N, int I, int J, int K) {
     __m512 zmm1, zmm2, zmm_accum;
     for (int i = I; i < I+B_L1; i++) {
-        for (int j = J; j < J+B_L1; j++) {
+        for (int j = J; j < J+B_L1; j+=16) {
+            zmm_accum = _mm512_load_ps(&C[i*N+j]);
+            // for (int k = K; k < K+B_L1; k++) {
+            //     zmm1 = _mm512_set1_ps(A[i*N+k]);
+            //     zmm2 = _mm512_load_ps(&B[k*N+j]);
+            //     zmm_accum = _mm512_fmadd_ps(zmm1, zmm2, zmm_accum);
+            // }
 
-            zmm_accum = _mm512_setzero_ps();
+            for (int k = K; k < K+B_L1; k+=16) {
 
-        #define CALC(X) \
-            zmm1 = _mm512_load_ps(&A[i*N+K+(X)*16]); \
-            zmm2 = _mm512_load_ps(&B[j*N+K+(X)*16]); \
-            zmm_accum = _mm512_fmadd_ps(zmm1, zmm2, zmm_accum);
+            #define CALC(X) \
+                zmm1 = _mm512_set1_ps(A[i*N+(k+(X))]); \
+                zmm2 = _mm512_load_ps(&B[(k+(X))*N+j]); \
+                zmm_accum = _mm512_fmadd_ps(zmm1, zmm2, zmm_accum);
 
-            CALC(0)
-            CALC(1)
-            CALC(2)
-            CALC(3)
+                CALC(0)
+                CALC(1)
+                CALC(2)
+                CALC(3)
+                CALC(4)
+                CALC(5)
+                CALC(6)
+                CALC(7)
+                CALC(8)
+                CALC(9)
+                CALC(10)
+                CALC(11)
+                CALC(12)
+                CALC(13)
+                CALC(14)
+                CALC(15)
+            }
 
-            C[i*N+j] += _mm512_reduce_add_ps(zmm_accum);
+            _mm512_store_ps(&C[i*N+j], zmm_accum);
         }
     }
 }
@@ -64,30 +83,5 @@ void _my_sgemm_l3(float* A, float* B, float* C, int N) {
 
 
 void my_sgemm(float* A, float* B, float* C, int N) {
-
-    // - 0. [x] ナイーブな実装 (0.404791[GFLOPS])
-    // - 1. [x] Bを転置して空間局所性を高める (1.9169[GFLOPS])
-    // - 2. [x] AVX512でベクトル化 (14.3965[GFLOPS])
-    // - 3. [x] 64B境界でアライメント (変化なし)
-    // - 4. [x] B=64でブロッキング (17.2415[GFLOPS])
-    // - 5. [x] ベクトル命令の変更 mul+add -> fmadd (27.3119[GFLOPS])
-    // - 6. [x] ブロッキングレベルを3段階に変更 (少し遅くなった)
-
-    // - 6. [x] ループアンローリング (34.3625[GFLOPS])
-    // - 7. [x] OpenMPで並列化(n_thread=32) (156.067[GFLOPS])
-
-    float *_B;
-    posix_memalign((void**)&_B, 64, N*N*sizeof(float));
-
-    # pragma omp parallel for collapse(2)
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            _B[i*N+j] = B[j*N+i];
-            C[i*N+j] = 0.f;
-        }
-    }
-
-    _my_sgemm_l3(A, _B, C, N);
-
-    free(_B);
+    _my_sgemm_l3(A, B, C, N);
 }
