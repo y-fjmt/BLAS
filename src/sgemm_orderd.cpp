@@ -4,15 +4,15 @@
 #include "../include/utils.hpp"
 #include <cstdio>
 
-// Optimized for 2 x Intel(R) Xeon(R) Platinum 846
+// Optimized for 2 x Intel(R) Xeon(R) Platinum 8468
 #define B_L1 64
 #define B_L2 256
 #define B_L3 512
 #define SIMD_LEN 16
 
-void _order(float* A, float* B, float* C, float* _A, float* _B, float* _C, int N);
-void _compute(float* _A, float* _B, float* _C, int N);
-void _reorder(float* C, float *_C, int N);
+inline void _order(float* A, float* B, float* C, float* _A, float* _B, float* _C, int N);
+inline void _compute(float* _A, float* _B, float* _C, int N);
+inline void _reorder(float* C, float *_C, int N);
 
 
 void my_sgemm_orderd(float* A, float* B, float* C, int N) {
@@ -21,11 +21,14 @@ void my_sgemm_orderd(float* A, float* B, float* C, int N) {
     float *_B = (float*)aligned_alloc(64, N*N*sizeof(float));
     float *_C = (float*)aligned_alloc(64, N*N*sizeof(float));
 
-    _order(A, B, C, _A, _B, _C, N);
-
-    _compute(_A, _B, _C, N);
-
-    _reorder(C, _C, N);
+    #pragma omp parallel 
+    {
+        _order(A, B, C, _A, _B, _C, N);
+        #pragma omp barrier
+        _compute(_A, _B, _C, N);
+        #pragma omp barrier
+        _reorder(C, _C, N);
+    }
 
     free(_A);
     free(_B);
@@ -33,12 +36,12 @@ void my_sgemm_orderd(float* A, float* B, float* C, int N) {
 }
 
 
-void _order(float* A, float* B, float* C, float* _A, float* _B, float* _C, int N) {
+inline void _order(float* A, float* B, float* C, float* _A, float* _B, float* _C, int N) {
 
     __m512 zmm_cpy, zmm_zeros;
     zmm_zeros = _mm512_setzero_ps();
 
-    #pragma omp parallel for private(zmm_cpy), collapse(2)
+    #pragma omp for private(zmm_cpy), collapse(2)
     for (int i_l3 = 0; i_l3 < N; i_l3+=B_L3) {
         for (int j_l3 = 0; j_l3 < N; j_l3+=B_L3) {
 
@@ -79,14 +82,14 @@ void _order(float* A, float* B, float* C, float* _A, float* _B, float* _C, int N
 }
 
 
-void _compute(float* _A, float* _B, float* _C, int N) {
+inline void _compute(float* _A, float* _B, float* _C, int N) {
 
     int N_L3 =    N / B_L3, B_L3_2 = B_L3 * B_L3;
     int N_L2 = B_L3 / B_L2, B_L2_2 = B_L2 * B_L2;
     int N_L1 = B_L2 / B_L1, B_L1_2 = B_L1 * B_L1;
 
     // L3 Blocks
-    #pragma omp parallel for collapse(2)
+    #pragma omp for collapse(2)
     for (int i_l3 = 0; i_l3 < N_L3; i_l3++) {
         for (int j_l3 = 0; j_l3 < N_L3; j_l3++) {
             for (int k_l3 = 0; k_l3 < N_L3; k_l3++) {
@@ -164,11 +167,11 @@ void _compute(float* _A, float* _B, float* _C, int N) {
 }
 
 
-void _reorder(float* C, float *_C, int N) {
+inline void _reorder(float* C, float *_C, int N) {
 
     __m512 zmm_cpy;
 
-    #pragma omp parallel for private(zmm_cpy), collapse(2)
+    #pragma omp for private(zmm_cpy), collapse(2)
     for (int i_l3 = 0; i_l3 < N; i_l3+=B_L3) {
         for (int j_l3 = 0; j_l3 < N; j_l3+=B_L3) {
 
