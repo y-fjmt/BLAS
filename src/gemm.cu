@@ -1,5 +1,10 @@
 #include <iostream>
 #include <cstdio>
+#include "../include/utils.hpp"
+
+using namespace std;
+
+#define data_t float
 
 #if defined(data_t) && data_t == float
     #define GEMM_NAME cuda_sgemm
@@ -23,10 +28,6 @@ __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
         C[i*N+j] += A[i*N+k] * B[k*N+j];
     }
 
-    if (i == 0 and j == 0) {
-        printf("%f\n", C[i*N+j]);
-    }
-
 }
 
 
@@ -34,38 +35,37 @@ void GEMM_NAME(data_t *A, data_t *B, data_t *C, size_t N,
                 float *kernel_time=nullptr) {
 
     data_t *d_A, *d_B, *d_C;
-    cudaMalloc((void**)&d_A, N*N*sizeof(data_t));
-    cudaMalloc((void**)&d_B, N*N*sizeof(data_t));
-    cudaMalloc((void**)&d_C, N*N*sizeof(data_t));
+    CHECK(cudaMalloc((void**)&d_A, N*N*sizeof(data_t)));
+    CHECK(cudaMalloc((void**)&d_B, N*N*sizeof(data_t)));
+    CHECK(cudaMalloc((void**)&d_C, N*N*sizeof(data_t)));
 
-    cudaMemcpy(d_A, A, N*N*sizeof(data_t), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, B, N*N*sizeof(data_t), cudaMemcpyHostToDevice);
+    CHECK(cudaMemcpy(d_A, A, N*N*sizeof(data_t), cudaMemcpyHostToDevice));
+    CHECK(cudaMemcpy(d_B, B, N*N*sizeof(data_t), cudaMemcpyHostToDevice));
 
     cudaEvent_t start, end;
-    cudaEventCreate(&start);
-    cudaEventCreate(&end);
+    CHECK(cudaEventCreate(&start));
+    CHECK(cudaEventCreate(&end));
 
-    int threads_1d = 1024;
-    int blocks_1d = (N + threads_1d - 1) / threads_1d;
-    dim3 threads(threads_1d, threads_1d);
-    dim3 blocks(blocks_1d, blocks_1d);
+    int tpb = 16;  /* sqrt(1024) */
+    dim3 ThreadsPerBlocks(tpb, tpb);
+    dim3 BlocksPerGrids((N + tpb - 1) / tpb, (N + tpb - 1) / tpb);
 
-    cudaEventRecord(start);
-    GEMM_KERNEL_NAME<<<blocks, threads>>>(d_A, d_B, d_C, N);
-    cudaEventRecord(end);
-    cudaEventSynchronize(end);
-    cudaDeviceSynchronize();
+    CHECK(cudaEventRecord(start));
+    GEMM_KERNEL_NAME<<<BlocksPerGrids, ThreadsPerBlocks>>>(d_A, d_B, d_C, N);
 
-    cudaMemcpy(d_C, C, N*N*sizeof(data_t), cudaMemcpyDeviceToHost);
+    CHECK(cudaEventRecord(end));
+    CHECK(cudaEventSynchronize(end));
+
+    CHECK(cudaMemcpy(C, d_C, N*N*sizeof(data_t), cudaMemcpyDeviceToHost));
 
     if (kernel_time) {
         cudaEventElapsedTime(kernel_time, start, end);
     }
     
-    cudaEventDestroy(start);
-    cudaEventDestroy(end);
+    CHECK(cudaEventDestroy(start));
+    CHECK(cudaEventDestroy(end));
 
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
+    CHECK(cudaFree(d_A));
+    CHECK(cudaFree(d_B));
+    CHECK(cudaFree(d_C));
 }
