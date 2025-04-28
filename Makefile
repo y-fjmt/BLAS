@@ -1,28 +1,39 @@
-CXX := g++
-CXXFLAGS := -g -Wall -O2 -mavx512f -march=native
-LDFLAGS := -fopenmp -lopenblas -lpthread -lgfortran \
-		   -LOpenBLAS/build/lib \
+CXX := /usr/bin/g++
+CXXFLAGS := -g -Wall -O2 -fopenmp
+LDFLAGS := -lcublas -lcudart -lstdc++ \
 		   -Lgoogletest/build/lib
 INCLUDES := -IOpenBLAS/build/include \
 			-Igoogletest/googlemock/include \
 			-Igoogletest/googletest/include
+FLAGS := -fopenmp
 
-SRC_DIR := src
-BUILD_DIR := build
-SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SRC_FILES))
-TARGET := main.out
+NVCC := /usr/local/cuda/bin/nvcc
+NVCCFLAGS := -g -G \
+			-Xcompiler -fopenmp \
+			--generate-code \
+			arch=compute_90,code=sm_90
+SRC := src
+DST := build
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+$(DST):
+	mkdir -p $(DST)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LDFLAGS) -c $< -o $@
 
-$(TARGET): $(OBJ_FILES)
-	$(CXX) -o $@ $^ $(LDFLAGS) 
+$(DST)/utils.o: $(SRC)/utils/utils.cpp | $(DST)
+	$(CXX) -c $< -o $@ $(CXXFLAGS) $(INCLUDES)
+
+
+test_cu_sgemm.out: $(DST)/utils.o
+	$(NVCC) $(NVCCFLAGS) -Ddata_t=float \
+		-c $(SRC)/gemm_cublas.cu -o $(DST)/cu_sgemm_blas.o
+	$(NVCC) $(NVCCFLAGS) -Ddata_t=float \
+		-c $(SRC)/gemm.cu -o $(DST)/cu_sgemm.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) -Ddata_t=float\
+		-c $(SRC)/test/cu_gemm.cpp -o $(DST)/test_cu_sgemm.o
+	$(NVCC) $(NVCCFLAGS) $(LDFLAGS) \
+		$(DST)/cu_sgemm.o $(DST)/cu_sgemm_blas.o $(DST)/test_cu_sgemm.o -o $@
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(DST) *.out *.o
 
 .PHONY: clean
