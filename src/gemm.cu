@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstdio>
+#include <cmath>
+#include <cuda_runtime.h>
 #include "../include/utils.hpp"
 
 using namespace std;
@@ -16,17 +18,34 @@ using namespace std;
     #error data_t is not given or invalid data type.
 #endif
 
+#define BLOCK 32
 
 __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
 
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    // GFLOPS on GTX1080ti N=1024
+    // 1. naive: 4.36
+    // 2. Coalesced access: 4.33
+
+    const int i = blockIdx.x * BLOCK + (threadIdx.x / BLOCK);
+    const int j = blockIdx.y * BLOCK + (threadIdx.x % BLOCK);
     if (i >= N or j >= N) return;
 
     C[i*N+j] = 0.0;
     for (int k = 0; k < N; k++) {
         C[i*N+j] += A[i*N+k] * B[k*N+j];
     }
+
+    // int y_global = blockIdx.y * TILE_SIZE + threadIdx.y; 
+    // int x_global = blockIdx.x * TILE_SIZE + threadIdx.x; 
+
+    // __shared__ data_t local_A[TILE_SIZE][TILE_SIZE];
+    // __shared__ data_t local_B[TILE_SIZE][TILE_SIZE];
+
+    // // load into shared memory
+    // local_A[threadIdx.y][threadIdx.x] = A[y_global*N+x_global];
+    // local_B[threadIdx.y][threadIdx.x] = B[y_global*N+x_global];
+
+    // __syncthreads();
 
 }
 
@@ -46,9 +65,9 @@ void GEMM_NAME(data_t *A, data_t *B, data_t *C, size_t N,
     CHECK(cudaEventCreate(&start));
     CHECK(cudaEventCreate(&end));
 
-    int tpb = 16;  /* sqrt(1024) */
-    dim3 ThreadsPerBlocks(tpb, tpb);
-    dim3 BlocksPerGrids((N + tpb - 1) / tpb, (N + tpb - 1) / tpb);
+    dim3 ThreadsPerBlocks(BLOCK*BLOCK);
+    dim3 BlocksPerGrids((N + BLOCK - 1) / BLOCK,
+                        (N + BLOCK - 1) / BLOCK);
 
     CHECK(cudaEventRecord(start));
     GEMM_KERNEL_NAME<<<BlocksPerGrids, ThreadsPerBlocks>>>(d_A, d_B, d_C, N);

@@ -18,21 +18,15 @@
 
 using namespace std;
 
-pair<double, double> mean_std(vector<double> v) {
-    double mean = reduce(v.begin(), v.end()) / v.size();
-    double std = 0.0;
-    for (double x: v) {
-        std += pow(mean-x ,2);
-    }
-    std = sqrt(std / v.size());
-    return make_pair(mean, std);    
+double _mm_gflops(double sec, int N) {
+    return (2*N*N) / sec / 1000 / 1000;
 }
 
 int main(int argc, char const *argv[]) {
     
-    size_t N = 64;
+    size_t N = 1024;
     int n_warmup  = 1;
-    int n_repeats = 1;
+    int n_repeats = 5;
 
     data_t *A = (data_t*)malloc(N*N*sizeof(data_t));
     data_t *B = (data_t*)malloc(N*N*sizeof(data_t));
@@ -42,12 +36,13 @@ int main(int argc, char const *argv[]) {
     init_vector(A, N*N);
     init_vector(B, N*N);
 
-    float kernel_time;
+    float diff, kernel_time;
     chrono::system_clock::time_point st, et;
     vector<double> openblas_elapsed;
     vector<double> cuda_elapsed, cuda_kernel_elapsed;
 
     // CUDA GEMM
+    cout << "[CUDA]" << endl;
     for (int i = 0; i < n_warmup; i++) {
         GEMM_NAME(A, B, C, N, &kernel_time);
     }
@@ -55,13 +50,13 @@ int main(int argc, char const *argv[]) {
         st = chrono::system_clock::now();
         GEMM_NAME(A, B, C, N, &kernel_time);
         et = chrono::system_clock::now();
-        cuda_kernel_elapsed.push_back(kernel_time);
-        cuda_elapsed.push_back(
-            chrono::duration_cast<chrono::milliseconds>(et-st).count()
-        );
+        diff = chrono::duration<double, std::milli>(et-st).count();
+        printf("%.2f(ms), %.2f(GFLOPS) / %.2f(ms), %.2f(GFLOPS)\n", 
+            diff,  _mm_gflops(diff/1000, N), kernel_time, _mm_gflops(kernel_time/1000, N));
     }
 
     // OpenBLAS GEMM
+    cout << "[OpenBLAS]" << endl;
     for (int i = 0; i < n_warmup; i++) {
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, \
                     N, N, N, 1, A, N, B, N, 0, OpenBLAS_C, N);
@@ -71,9 +66,8 @@ int main(int argc, char const *argv[]) {
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, \
                     N, N, N, 1, A, N, B, N, 0, OpenBLAS_C, N);
         et = chrono::system_clock::now();
-        openblas_elapsed.push_back(
-            chrono::duration_cast<chrono::milliseconds>(et-st).count()
-        );
+        diff = chrono::duration<double, std::milli>(et-st).count();
+        cout << diff << "(ms), " << _mm_gflops(diff/1000, N) << "(GFLOPS)" << endl;
     }
 
 
