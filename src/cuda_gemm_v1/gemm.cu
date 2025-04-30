@@ -2,29 +2,23 @@
 #include <cstdio>
 #include <cmath>
 #include <cuda_runtime.h>
-#include "../include/utils.hpp"
+#include "../../include/utils.hpp"
 
 using namespace std;
 
-#define data_t float
-
-#if defined(data_t) && data_t == float
-    #define GEMM_NAME cuda_sgemm
-    #define GEMM_KERNEL_NAME cuda_sgemm_kernel
-#elif defined(data_t) && data_t == double
+#if defined(USE_DOUBLE)
+    #define data_t double
     #define GEMM_NAME cuda_dgemm
     #define GEMM_KERNEL_NAME cuda_dgemm_Kernel
 #else
-    #error data_t is not given or invalid data type.
+    #define data_t float
+    #define GEMM_NAME cuda_sgemm
+    #define GEMM_KERNEL_NAME cuda_sgemm_kernel
 #endif
 
 #define BLOCK 32
 
 __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
-
-    // GFLOPS on GTX1080ti N=1024
-    // 1. naive: 4.36
-    // 2. Coalesced access: 4.33
 
     const int i = blockIdx.x * BLOCK + (threadIdx.x / BLOCK);
     const int j = blockIdx.y * BLOCK + (threadIdx.x % BLOCK);
@@ -78,7 +72,7 @@ void GEMM_NAME(data_t *A, data_t *B, data_t *C, size_t N,
     CHECK(cudaMemcpy(C, d_C, N*N*sizeof(data_t), cudaMemcpyDeviceToHost));
 
     if (kernel_time) {
-        cudaEventElapsedTime(kernel_time, start, end);
+        CHECK(cudaEventElapsedTime(kernel_time, start, end));
     }
     
     CHECK(cudaEventDestroy(start));

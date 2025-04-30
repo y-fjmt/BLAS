@@ -14,6 +14,18 @@
     }                                                 \
 }
 
+#define CHECK_CUBLAS(call)                            \
+{                                                     \
+    const cublasStatus_t status = call;               \
+    if (status != CUBLAS_STATUS_SUCCESS)              \
+    {                                                 \
+       printf("Error: %s:%d,  ", __FILE__, __LINE__); \
+       printf("code:%d, reason: cublas error.\n",     \
+         status);                                     \
+       exit(1);                                       \
+    }                                                 \
+}
+
 
 template<typename T>
 void init_vector(T *v, size_t N) {
