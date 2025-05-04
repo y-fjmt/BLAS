@@ -22,14 +22,16 @@ using namespace std;
 
 __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
 
-    int i = blockIdx.y * blockDim.y + threadIdx.y; 
-    int j = blockIdx.x * blockDim.x + threadIdx.x; 
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
 
-    size_t c = 0.0;
+    if (i >= N or j >= N) return;
+
+    data_t c = 0.0;
     for (int k = 0; k < N; k++) {
         c += A[i*N+k] * B[k*N+j];
     }
-    C[i*N+j] = c;
+    C[i*N+j] += c;
 
 }
 

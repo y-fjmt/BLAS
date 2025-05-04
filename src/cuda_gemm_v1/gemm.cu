@@ -16,30 +16,22 @@ using namespace std;
     #define GEMM_KERNEL_NAME cuda_sgemm_kernel
 #endif
 
-#define BLOCK 32
+#define TS_M 32
+#define TS_N 32
+#define TS_L 32
 
 __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
 
-    const int i = blockIdx.x * BLOCK + (threadIdx.x / BLOCK);
-    const int j = blockIdx.y * BLOCK + (threadIdx.x % BLOCK);
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+
     if (i >= N or j >= N) return;
 
-    C[i*N+j] = 0.0;
+    data_t c = 0.0;
     for (int k = 0; k < N; k++) {
-        C[i*N+j] += A[i*N+k] * B[k*N+j];
+        c += A[i*N+k] * B[k*N+j];
     }
-
-    // int y_global = blockIdx.y * TILE_SIZE + threadIdx.y; 
-    // int x_global = blockIdx.x * TILE_SIZE + threadIdx.x; 
-
-    // __shared__ data_t local_A[TILE_SIZE][TILE_SIZE];
-    // __shared__ data_t local_B[TILE_SIZE][TILE_SIZE];
-
-    // // load into shared memory
-    // local_A[threadIdx.y][threadIdx.x] = A[y_global*N+x_global];
-    // local_B[threadIdx.y][threadIdx.x] = B[y_global*N+x_global];
-
-    // __syncthreads();
+    C[i*N+j] += c;
 
 }
 
@@ -59,9 +51,9 @@ void GEMM_NAME(data_t *A, data_t *B, data_t *C, size_t N,
     CHECK(cudaEventCreate(&start));
     CHECK(cudaEventCreate(&end));
 
-    dim3 ThreadsPerBlocks(BLOCK*BLOCK);
-    dim3 BlocksPerGrids((N + BLOCK - 1) / BLOCK,
-                        (N + BLOCK - 1) / BLOCK);
+    dim3 ThreadsPerBlocks(TS_M, TS_N);
+    dim3 BlocksPerGrids((N + TS_M - 1) / TS_M,
+                        (N + TS_N - 1) / TS_N);
 
     CHECK(cudaEventRecord(start));
     GEMM_KERNEL_NAME<<<BlocksPerGrids, ThreadsPerBlocks>>>(d_A, d_B, d_C, N);

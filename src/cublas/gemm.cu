@@ -37,7 +37,7 @@ void GEMM_NAME(data_t *A, data_t *B, data_t *C, size_t N,
     CHECK_CUBLAS(
         CUBLAS_GEMM_NAME(
             handle,
-            CUBLAS_OP_T, CUBLAS_OP_T,
+            CUBLAS_OP_N, CUBLAS_OP_N,
             N, N, N,
             &alpha,
             d_B, N,

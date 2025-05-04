@@ -68,7 +68,7 @@ int main(int argc, char const *argv[]) {
     // OpenBLAS GEMM
     cout << "[cuBLAS]" << endl;
     for (int i = 0; i < n_warmup; i++) {
-        CUBLAS_GEMM_NAME(A, B, C, N, &kernel_time);
+        CUBLAS_GEMM_NAME(A, B, cuBLAS_C, N, &kernel_time);
     }
     for (int i = 0; i < n_repeats; i++) {
         st = chrono::system_clock::now();
