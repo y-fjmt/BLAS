@@ -1,5 +1,5 @@
 NVCC := /usr/local/cuda/bin/nvcc
-NVCCFLAGS := -g -G -O2 -std=c++17
+NVCCFLAGS := -O2 -std=c++17
 LDFLAGS := -lcublas -lgtest -lgtest_main -lpthread \
 		   -L../../googletest/build/lib 
 INCLUDES := -I../../googletest/googlemock/include \
@@ -20,31 +20,31 @@ dgemm_benchmark: dgemm.o utils.o dbench.o cublas_dgemm.o
 	$(NVCC) $(NVCCFLAGS) $(LDFLAGS) $^ -o $@
 
 s_test.o: ../test/cuda_gemm.cpp
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@
 
 d_test.o: ../test/cuda_gemm.cpp
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@ -DUSE_DOUBLE
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@ -DUSE_DOUBLE
 
 sbench.o: ../benchmark/cu_gemm.cu
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@
 
 dbench.o: ../benchmark/cu_gemm.cu
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@ -DUSE_DOUBLE
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@ -DUSE_DOUBLE
 
 cublas_sgemm.o: ../cublas/gemm.cu
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@
 
 cublas_dgemm.o: ../cublas/gemm.cu
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@ -DUSE_DOUBLE
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@ -DUSE_DOUBLE
 
 sgemm.o: gemm.cu
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@
 
 dgemm.o: gemm.cu
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@ -DUSE_DOUBLE
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@ -DUSE_DOUBLE
 
 utils.o: ../utils/utils.cpp
-	$(NVCC) $(INCLUDES) $(NVCCFLAGS) -c $^ -o $@
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@
 
 clean:
 	rm -rf *gemm_benchmark *gemm_test *.o
