@@ -48,8 +48,6 @@ int main(int argc, char const *argv[]) {
 
     float diff, kernel_time;
     chrono::system_clock::time_point st, et;
-    vector<double> openblas_elapsed;
-    vector<double> cuda_elapsed, cuda_kernel_elapsed;
 
     // CUDA GEMM
     cout << "[CUDA]" << endl;

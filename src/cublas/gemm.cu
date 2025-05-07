@@ -40,8 +40,8 @@ void GEMM_NAME(data_t *A, data_t *B, data_t *C, size_t N,
             CUBLAS_OP_N, CUBLAS_OP_N,
             N, N, N,
             &alpha,
-            d_B, N,
             d_A, N,
+            d_B, N,
             &beta,
             d_C, N)
     );

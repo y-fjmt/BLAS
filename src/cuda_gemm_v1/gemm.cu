@@ -16,10 +16,6 @@ using namespace std;
     #define GEMM_KERNEL_NAME cuda_sgemm_kernel
 #endif
 
-#define TS_M 32
-#define TS_N 32
-#define TS_L 32
-
 __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
 
     int i = blockIdx.y * blockDim.y + threadIdx.y;
@@ -31,7 +27,7 @@ __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
     for (int k = 0; k < N; k++) {
         c += A[i*N+k] * B[k*N+j];
     }
-    C[i*N+j] += c;
+    C[i*N+j] = c;
 
 }
 
@@ -51,9 +47,9 @@ void GEMM_NAME(data_t *A, data_t *B, data_t *C, size_t N,
     CHECK(cudaEventCreate(&start));
     CHECK(cudaEventCreate(&end));
 
-    dim3 ThreadsPerBlocks(TS_M, TS_N);
-    dim3 BlocksPerGrids((N + TS_M - 1) / TS_M,
-                        (N + TS_N - 1) / TS_N);
+    dim3 ThreadsPerBlocks(32, 32);
+    dim3 BlocksPerGrids((N + 32 - 1) / 32,
+                        (N + 32 - 1) / 32);
 
     CHECK(cudaEventRecord(start));
     GEMM_KERNEL_NAME<<<BlocksPerGrids, ThreadsPerBlocks>>>(d_A, d_B, d_C, N);
