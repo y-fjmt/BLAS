@@ -1,5 +1,5 @@
 
-void my_sgemm_orderd(float* A, float* B, float* C, int N);
+void sgemm(float* A, float* B, float* C, int N);
 
 
 void cuda_sgemm(float *A, float *B, float *C, size_t N, float *elapsed_time = nullptr);

@@ -22,16 +22,46 @@ using namespace std;
 
 __global__ void GEMM_KERNEL_NAME(data_t *A, data_t *B, data_t *C, size_t N) {
 
+    int M = N;
+    int L = N;
+
     int i = blockIdx.y * blockDim.y + threadIdx.y;
     int j = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (i >= N or j >= N) return;
+    if (i >= M || j >= N) return;
 
+    __shared__ data_t _A[TS_M][TS_L];
+    __shared__ data_t _B[TS_L][TS_N];
+    
     data_t c = 0.0;
-    for (int k = 0; k < N; k++) {
-        c += A[i*N+k] * B[k*N+j];
+
+    i = threadIdx.y;
+    j = threadIdx.x;
+
+    int I = blockIdx.y * TS_M;
+    int J = blockIdx.x * TS_N;
+
+    for (int K = 0; K < N; K+=TS_L) {
+        
+        // load into shared memory        
+        // FIXME: (K+j),(K+i)は正方行列限定
+        _A[i][j] = A[(I+i)*N + (K+j)];
+        _B[i][j] = B[(K+i)*N + (J+j)];
+
+        // Coalescing
+        // _B[i][j] = B[(J+j)*N]+(K+i);
+
+        __syncthreads();
+
+        // compute sub matrix
+        for (int k = 0; k < TS_L; k++) {
+            c += _A[i][k] * _B[k][j];
+        }
+
+        __syncthreads();
     }
-    C[i*N+j] += c;
+
+    C[(I+i) * N + (J+j)] = c;
 
 }
 

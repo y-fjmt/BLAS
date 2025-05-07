@@ -1,6 +1,6 @@
 #include <iostream>
 #include <gtest/gtest.h>
-#include "../../include/sgemm.hpp"
+#include "../../include/gemm.hpp"
 #include "../../include/utils.hpp"
 #include "../../include/cublas_wrapper.hpp"
 

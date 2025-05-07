@@ -1,13 +1,11 @@
 #include <omp.h>
 #include <immintrin.h>
-
-#include "../include/utils.hpp"
-#include <cstdio>
+#include "../../include/utils.hpp"
 
 // Optimized for 2 x Intel(R) Xeon(R) Platinum 8468
-#define B_L1 64
-#define B_L2 256
-#define B_L3 512
+#define B_L1 32
+#define B_L2 128
+#define B_L3 256
 #define SIMD_LEN 16
 
 inline void _order(float* A, float* B, float* C, float* _A, float* _B, float* _C, int N);
@@ -15,7 +13,7 @@ inline void _compute(float* _A, float* _B, float* _C, int N);
 inline void _reorder(float* C, float *_C, int N);
 
 
-void my_sgemm_orderd(float* A, float* B, float* C, int N) {
+void sgemm(float* A, float* B, float* C, int N) {
 
     float *_A = (float*)aligned_alloc(64, N*N*sizeof(float));
     float *_B = (float*)aligned_alloc(64, N*N*sizeof(float));

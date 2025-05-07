@@ -1,7 +1,12 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <string>
 
+#define TO_STRING(x) #x
+#define TYPE_NAME(x) TO_STRING(x)
+
+using namespace std;
 
 #define CHECK(call)                                   \
 {                                                     \
@@ -27,6 +32,8 @@
     }                                                 \
 }
 
+double _mm_gflops(double sec, int N);
+string cpu_name();
 
 template<typename T>
 void init_vector(T *v, size_t N) {
@@ -48,5 +55,3 @@ bool allclose(T* C1, T* C2, size_t N, T eps=1e-3) {
     }
     return true;
 }
-
-double calc_gflops(std::chrono::high_resolution_clock::time_point start, int N);

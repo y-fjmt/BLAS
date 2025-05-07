@@ -7,10 +7,10 @@ INCLUDES := -I../../googletest/googlemock/include \
 
 all: sgemm_benchmark dgemm_benchmark sgemm_test dgemm_test 
 
-sgemm_test: s_test.o sgemm.o utils.o cublas_sgemm.o
+sgemm_test: sgemm_test.o sgemm.o utils.o cublas_sgemm.o
 	$(NVCC) $(NVCCFLAGS) $(LDFLAGS) $^ -o $@
 
-dgemm_test: d_test.o dgemm.o utils.o cublas_dgemm.o
+dgemm_test: dgemm_test.o dgemm.o utils.o cublas_dgemm.o
 	$(NVCC) $(NVCCFLAGS) $(LDFLAGS) $^ -o $@
 
 sgemm_benchmark: sgemm.o utils.o sbench.o cublas_sgemm.o
@@ -19,10 +19,10 @@ sgemm_benchmark: sgemm.o utils.o sbench.o cublas_sgemm.o
 dgemm_benchmark: dgemm.o utils.o dbench.o cublas_dgemm.o
 	$(NVCC) $(NVCCFLAGS) $(LDFLAGS) $^ -o $@
 
-s_test.o: ../test/cuda_gemm.cpp
+sgemm_test.o: ../test/gemm.cu
 	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@
 
-d_test.o: ../test/cuda_gemm.cpp
+dgemm_test.o: ../test/gemm.cu
 	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@ -DUSE_DOUBLE
 
 sbench.o: ../benchmark/cu_gemm.cu
@@ -47,6 +47,6 @@ utils.o: ../utils/utils.cpp
 	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $^ -o $@
 
 clean:
-	rm -rf *gemm_benchmark *gemm_test *.o
+	rm -rf *_benchmark *_test *.o
 
 .PHONY: clean

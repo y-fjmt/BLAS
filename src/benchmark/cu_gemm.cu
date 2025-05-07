@@ -2,7 +2,7 @@
 #include <vector>
 #include <utility>
 #include <chrono>
-#include "../../include/sgemm.hpp"
+#include "../../include/gemm.hpp"
 #include "../../include/utils.hpp"
 #include "../../include/cublas_wrapper.hpp"
 
@@ -16,15 +16,7 @@
     #define CUBLAS_GEMM_NAME cublas_sgemm
 #endif
 
-#define TO_STRING(x) #x
-#define TYPE_NAME(x) TO_STRING(x)
-
 using namespace std;
-
-double _mm_gflops(double sec, int N) {
-    return (2.0*N*N*N) / (sec * 1e9);
-}
-
 
 int main(int argc, char const *argv[]) {
     
