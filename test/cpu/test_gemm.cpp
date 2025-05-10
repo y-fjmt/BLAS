@@ -1,36 +1,45 @@
-#include <iostream>
+#include <random>
 #include <cblas.h>
 #include <gtest/gtest.h>
-#include "../../include/gemm.hpp"
-#include "../../include/utils.hpp"
+#include "../../include/blas.hpp"
 
 #if defined(USE_DOUBLE)
     #define data_t double
     #define GEMM_NAME dgemm
     #define OPENBLAS_GEMM_NAME cblas_dgemm
+    #define ALLCLOSE dallclose
+    #define TEST_CASE CPU_DGEMM_TEST
+    #define TESTER CPU_DGEMM_TESTER
 #else
     #define data_t float
     #define GEMM_NAME sgemm
     #define OPENBLAS_GEMM_NAME cblas_sgemm
+    #define ALLCLOSE sallclose
+    #define TEST_CASE CPU_SGEMM_TEST
+    #define TESTER CPU_SGEMM_TESTER
 #endif
 
 using namespace std;
 
 
-bool _test(int M, int N, int L) {
+bool TESTER(int M, int N, int L) {
+
+    std::mt19937 engine;
+    std::uniform_real_distribution<data_t> dist(-1.0, 1.0);
+    auto generator = [&](){return dist(engine);};
 
     data_t *A = (data_t*)aligned_alloc(64, N*L*sizeof(data_t));
     data_t *B = (data_t*)aligned_alloc(64, L*M*sizeof(data_t));
     data_t *C = (data_t*)aligned_alloc(64, N*M*sizeof(data_t));
     data_t *OpenBLAS_C = (data_t*)aligned_alloc(64, N*L*sizeof(data_t));
 
-    init_vector(A, N*M);
-    init_vector(B, N*M);
+    std::generate(&A[0], &A[N*L], generator);
+    std::generate(&B[0], &B[L*M], generator);
 
     GEMM_NAME(A, B, C, N);
     OPENBLAS_GEMM_NAME(CblasRowMajor, CblasNoTrans, CblasNoTrans, \
                         N, N, N, 1, A, N, B, N, 0, OpenBLAS_C, N);
-    bool is_passed = allclose(C, OpenBLAS_C, M*N);
+    bool is_passed = ALLCLOSE(C, OpenBLAS_C, M*N);
 
     free(A);
     free(B);
@@ -41,13 +50,7 @@ bool _test(int M, int N, int L) {
 }
 
 
-TEST(CUDA_GEMM_TEST, same_size_matrixes) {
+TEST(TEST_CASE, same_size_matrixes) {
     int M = 1024, N = 1024, L = 1024;
-    ASSERT_TRUE(_test(M, N, L));
+    ASSERT_TRUE(TESTER(M, N, L));
 }
-
-
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-  }

@@ -1,6 +1,5 @@
 #include <omp.h>
 #include <immintrin.h>
-#include "../../include/utils.hpp"
 
 // Optimized for 2 x Intel(R) Xeon(R) Platinum 8468
 #define B_L1 32

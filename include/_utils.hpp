@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <chrono>
 #include <random>
@@ -20,17 +21,7 @@ using namespace std;
     }                                                 \
 }
 
-#define CHECK_CUBLAS(call)                            \
-{                                                     \
-    const cublasStatus_t status = call;               \
-    if (status != CUBLAS_STATUS_SUCCESS)              \
-    {                                                 \
-       printf("Error: %s:%d,  ", __FILE__, __LINE__); \
-       printf("code:%d, reason: cublas error.\n",     \
-         status);                                     \
-       exit(1);                                       \
-    }                                                 \
-}
+
 
 double _mm_gflops(double sec, int N);
 string cpu_name();
@@ -42,16 +33,4 @@ void init_vector(T *v, size_t N) {
     for (int i = 0; i < (int)N; i++) {
         v[i] = dist(engine);
     }
-}
-
-
-template<typename T>
-bool allclose(T* C1, T* C2, size_t N, T eps=1e-3) {
-    for (int i = 0; i < (int)N; i++) {
-        if (abs(C1[i] - C2[i]) > eps) {
-            return false;
-            break;
-        }
-    }
-    return true;
 }
