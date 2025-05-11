@@ -18,6 +18,6 @@ bool ALLCLOSE(data_t* input, data_t* other, size_t N, data_t rtol=1e-05, data_t 
         if (!is_close) {
             return false;
         }
-        return true;
     }
+    return true;
 }
