@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cuda_runtime.h>
 #include "../../include/_utils_cuda.hpp"
 
@@ -5,10 +6,11 @@
     #define data_t double
     #define ALLCLOSE dallclose
     #define ALLCLOSE_KERNEL dallclose_kernel
+    #define SCALED_ALLCLOSE dscaledAllclose
 #else
     #define data_t float
     #define ALLCLOSE sallclose
-    #define ALLCLOSE_KERNEL sallclose_kernel
+    #define SCALED_ALLCLOSE sscaledAllclose
 #endif
 
 
@@ -30,6 +32,11 @@ namespace cuda {
         ALLCLOSE_KERNEL<<<CEIL_DIV(N, 1024), 1024>>>(
             input, other, N, rtol, atol, &is_allclose
         );
-        return false;
+        return is_allclose;
+    }
+
+    bool SCALED_ALLCLOSE(data_t* input, data_t* other, size_t N, data_t rtol=1e-05, data_t atol=1e-08) {
+        data_t factor = std::sqrt(N);
+        return cuda::ALLCLOSE(input, other, N, factor*rtol, factor*atol);
     }
 }

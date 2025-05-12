@@ -7,19 +7,17 @@
     #define data_t double
     #define GEMM_NAME dgemm
     #define OPENBLAS_GEMM_NAME cblas_dgemm
-    #define ALLCLOSE dallclose
+    #define ALLCLOSE dscaledAllclose
     #define TEST_CASE CPU_DGEMM_TEST
     #define TESTER CPU_DGEMM_TESTER
 #else
     #define data_t float
     #define GEMM_NAME sgemm
     #define OPENBLAS_GEMM_NAME cblas_sgemm
-    #define ALLCLOSE sallclose
+    #define ALLCLOSE sscaledAllclose
     #define TEST_CASE CPU_SGEMM_TEST
     #define TESTER CPU_SGEMM_TESTER
 #endif
-
-using namespace std;
 
 
 bool TESTER(int M, int N, int L) {
@@ -28,13 +26,13 @@ bool TESTER(int M, int N, int L) {
     std::uniform_real_distribution<data_t> dist(-1.0, 1.0);
     auto generator = [&](){return dist(engine);};
 
-    data_t *A = (data_t*)aligned_alloc(64, N*L*sizeof(data_t));
-    data_t *B = (data_t*)aligned_alloc(64, L*M*sizeof(data_t));
-    data_t *C = (data_t*)aligned_alloc(64, N*M*sizeof(data_t));
-    data_t *OpenBLAS_C = (data_t*)aligned_alloc(64, N*L*sizeof(data_t));
+    data_t *A = (data_t*)aligned_alloc(64, M*L*sizeof(data_t));
+    data_t *B = (data_t*)aligned_alloc(64, L*N*sizeof(data_t));
+    data_t *C = (data_t*)aligned_alloc(64, M*N*sizeof(data_t));
+    data_t *OpenBLAS_C = (data_t*)aligned_alloc(64, M*N*sizeof(data_t));
 
-    std::generate(&A[0], &A[N*L], generator);
-    std::generate(&B[0], &B[L*M], generator);
+    std::generate(&A[0], &A[M*L], generator);
+    std::generate(&B[0], &B[L*N], generator);
 
     GEMM_NAME(A, B, C, N);
     OPENBLAS_GEMM_NAME(CblasRowMajor, CblasNoTrans, CblasNoTrans, \
@@ -50,7 +48,17 @@ bool TESTER(int M, int N, int L) {
 }
 
 
-TEST(TEST_CASE, same_size_matrixes) {
+TEST(TEST_CASE, same_size_matrixes_1) {
     int M = 1024, N = 1024, L = 1024;
+    ASSERT_TRUE(TESTER(M, N, L));
+}
+
+TEST(TEST_CASE, same_size_matrixes_2) {
+    int M = 2048, N = 2048, L = 2048;
+    ASSERT_TRUE(TESTER(M, N, L));
+}
+
+TEST(TEST_CASE, same_size_matrixes_3) {
+    int M = 4096, N = 4096, L = 4096;
     ASSERT_TRUE(TESTER(M, N, L));
 }

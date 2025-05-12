@@ -43,12 +43,8 @@ namespace cuda {
         for (int K = 0; K < N; K+=TS_L) {
             
             // load into shared memory        
-            // FIXME: (K+j),(K+i)は正方行列限定
             _A[i][j] = A[(I+i)*N + (K+j)];
             _B[i][j] = B[(K+i)*N + (J+j)];
-
-            // Coalescing
-            // _B[i][j] = B[(J+j)*N]+(K+i);
 
             __syncthreads();
 
