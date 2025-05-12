@@ -12,6 +12,7 @@ if(OpenMP_FOUND)
 endif()
 
 # add gtest and gbanch
+set(CMAKE_BUILD_TYPE Release)
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(${CMAKE_SOURCE_DIR}/3rdparty/benchmark EXCLUDE_FROM_ALL)
@@ -24,7 +25,7 @@ link_directories(${OPENBLAS_ROOT}/lib)
 
 add_subdirectory(src)
 add_subdirectory(test)
-# add_subdirectory(benchmark)
+add_subdirectory(benchmark)
 
 enable_testing()
 add_test(NAME AllTests COMMAND all_tests)
