@@ -6,12 +6,12 @@
     #define data_t double
     #define GEMM dgemm
     #define BM_GEMM bench_dgemm_cpu
-    #define BM_NAME "BLAS_DGEMM"
+    #define BM_NAME "CPU_DGEMM"
 #else
     #define data_t float
     #define GEMM sgemm
     #define BM_GEMM bench_sgemm_cpu
-    #define BM_NAME "BLAS_SGEMM"
+    #define BM_NAME "CPU_SGEMM"
 #endif
 
 static void BM_GEMM(benchmark::State& state) {

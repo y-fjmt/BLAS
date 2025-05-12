@@ -29,7 +29,7 @@ You can do benchmark with following command.
     --benchmark_counters_tabular=true \
     --benchmark_min_warmup_time=2 \
     --benchmark_time_unit=ms \
-    --benchmark_min_time=5s
+    --benchmark_min_time=2s
 ```
 Benchmark has some useful running options.
 See [user guide](https://github.com/google/benchmark/blob/main/docs/user_guide.md) for more detail.

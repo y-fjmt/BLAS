@@ -4,6 +4,7 @@ add_subdirectory(cpu)
 if(USE_CUDA)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
     add_subdirectory(cuda)
 endif()
 
