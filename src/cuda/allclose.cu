@@ -32,6 +32,7 @@ namespace cuda {
         ALLCLOSE_KERNEL<<<CEIL_DIV(N, 1024), 1024>>>(
             input, other, N, rtol, atol, &is_allclose
         );
+        cudaDeviceSynchronize();
         return is_allclose;
     }
 

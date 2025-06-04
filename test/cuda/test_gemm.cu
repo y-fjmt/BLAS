@@ -58,7 +58,6 @@ bool TESTER(int M, int N, int K) {
     cudaDeviceSynchronize();
         
     bool is_passed = ALLCLOSE(C, cublas_C, N*M);
-    cudaDeviceSynchronize();
 
     CURAND_CALL(curandDestroyGenerator(gen));
     cublasDestroy(handle);
